@@ -34,6 +34,28 @@ foreach ( $lesson in $lessons )
             $slide.Export( "$lesson\slides\" + $slide.Name + ".jpeg", "JPG" )
         }
     }
+
+    # In progress attempt at re-naming jpeg files
+    get-childitem -Path $lesson\slides\* -Include *.jpeg -recurse | foreach-object
+    {
+    $tmp = $_.name
+    $tmp = $tmp -split ' '
+    $noNum = $true
+    $tmp = foreach ($s in $tmp) 
+    {
+        if($noNum)
+        {
+            if($s -match "\b\d\b"){"0$s"; $noNum = $false}
+            elseif($s -match "\b\d\d\b"){"$s"; $noNum = $false}
+            else{$s}
+        }
+        else {$s}
+    }
+    $tmp = $tmp -join ' '
+    rename-item $_ $tmp
+    }
+
+    Get-ChildItem *.jpeg -recurse | Rename-Item -NewName {$_.Name -replace "Slide ", "" } # End in progress attempt
 }
 
 $lessonNames = $lessons.Name | Out-String
