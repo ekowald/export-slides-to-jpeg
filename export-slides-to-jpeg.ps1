@@ -1,6 +1,8 @@
 #    TODO:                                              #
 #    - Add support for individual lesson conversion     #
 #    - Add support for multiple module conversion       #
+#    - Fix lack of compatibility with other machines    #
+
 
 # Check that argument was passed and that it is a directory
 # Exit if not
