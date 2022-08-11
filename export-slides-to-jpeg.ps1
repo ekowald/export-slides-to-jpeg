@@ -1,66 +1,126 @@
-# Converts pptx to jpeg. Requires slides.pptx of each slides.md file.
-# Run script using argument that points to module folder
-# .\export-slides-to-jpeg.ps1 <path\to\module>
-
-if ( $args.Count -eq 0 ) 
+# Check that argument was passed and that it is a directory
+# Exit if not
+function checkArgs ( $module )
 {
-    Write-Host "Must supply Module folder as argument.`n .\export-slides-to-jpeg.ps1 <path\to\module>" -ForegroundColor Red
-    return
+    if ( !( Test-Path -Path $module ) )
+    {
+        Write-Host "Module Folder not found." -ForegroundColor Red
+        exit
+    }
+    
+    else
+    {
+        $moduleName = $module | Split-Path -Leaf
+        Write-Host "Converting '$moduleName' slides to jpeg images.`n" -ForegroundColor Yellow
+        createSlidesDirectory ( $module )
+    }
 }
 
-$msppt = New-Object -ComObject powerpoint.application
+# Create a new directory for the jpeg images
+function createSlidesDirectory ( $module )
+{
+    $lessons = Get-ChildItem -Path "$module\lessons"
 
-$moduleFolder = $args[0]
+    foreach ( $lesson in $lessons )
+    {
+        $lessonName = $lesson.Name
 
-$lessons = get-childitem "$moduleFolder\lessons"
-
-$moduleName = $moduleFolder | Split-Path -Leaf
-Write-Host "Converting '$moduleName' slides`n" -ForegroundColor DarkBlue
-
-foreach ( $lesson in $lessons ) 
-{   
-
-    if ( ( Test-Path "$lesson\slides.pptx" ) -and ( ( ( Get-Item "$lesson\slides.pptx" ).length ) -gt ( 1KB ) ) )
-    {   
-        $lessonName = $lesson.Name     
-        Write-Host "Creating /slides/ directory in $lessonName`n" -ForegroundColor Green
-        $null = New-Item -Path $lesson.fullname -Name slides -ItemType Directory -Force
-        
-        $pres = $msppt.presentations.open( "$lesson\slides.pptx", 2, $True, $False )
-        Write-Host "Converting $lessonName\slides.pptx to jpeg`n" -ForegroundColor Yellow
-
-        foreach ( $slide in $pres.slides )
+        if ( ( Test-Path "$lesson\slides.pptx" ) -and ( ( ( Get-Item "$lesson\slides.pptx" ).length ) -gt ( 1KB ) ) )
         {
-            $slide.Export( "$lesson\slides\" + $slide.Name + ".jpeg", "JPG" )
+
+            if ( !( Test-Path "$lesson\slides" ) )
+            {
+                Write-Host "Creating directory for $lessonName slides." -ForegroundColor Yellow
+                $null = New-Item -Path $lesson.fullname -Name slides -ItemType Directory -Force
+                Write-Host "Directory creation successful.`n" -ForegroundColor Green
+                convertSlides ( $lesson )
+            }
+
+            else
+            {
+                $dir = "$lesson\slides"
+                Remove-Item $dir -Force -Recurse
+                
+                Write-Host "Creating directory for $lessonName slides." -ForegroundColor Yellow
+                $null = New-Item -Path $lesson.fullname -Name slides -ItemType Directory -Force
+                Write-Host "Directory creation successful.`n" -ForegroundColor Green
+                convertSlides ( $lesson )
+            }
         }
     }
-
-    # In progress attempt at re-naming jpeg files
-    get-childitem -Path $lesson\slides\* -Include *.jpeg -recurse | foreach-object
-    {
-    $tmp = $_.name
-    $tmp = $tmp -split ' '
-    $noNum = $true
-    $tmp = foreach ($s in $tmp) 
-    {
-        if($noNum)
-        {
-            if($s -match "\b\d\b"){"0$s"; $noNum = $false}
-            elseif($s -match "\b\d\d\b"){"$s"; $noNum = $false}
-            else{$s}
-        }
-        else {$s}
-    }
-    $tmp = $tmp -join ' '
-    rename-item $_ $tmp
-    }
-
-    Get-ChildItem *.jpeg -recurse | Rename-Item -NewName {$_.Name -replace "Slide ", "" } # End in progress attempt
 }
 
-$lessonNames = $lessons.Name | Out-String
+# Convert the slides to jpeg images
+function convertSlides ( $lesson )
+{
+    $lessonName = $lesson.Name
+    $msppt = New-Object -ComObject powerpoint.application
+    $pres = $msppt.presentations.open( "$lesson\slides.pptx", 2, $True, $False )
 
-Write-Host "Finished converting pptx to jpeg for:"
-Write-Host $lessonNames -ForegroundColor Blue
+    Write-Host "Converting $lessonName\slides.pptx to jpeg" -ForegroundColor Yellow
 
-$msppt.Quit()
+    foreach ( $slide in $pres.slides )
+    {
+        $slide.Export( "$lesson\slides\" + $slide.Name + ".jpeg", "JPG" )
+    }
+
+    Write-Host "Finished Converting $lessonName\slides.pptx to jpeg`n" -ForegroundColor Green
+    $msppt.Quit()
+
+
+    $slidesDir = "$lesson\slides"
+    changeNames ( $slidesDir )
+
+}
+
+# Change the names of the jpeg images to match the slide number
+function changeNames ( $slidesDir )
+{
+    $slides = Get-ChildItem -Path $slidesDir
+    Write-Host "Converting JPEG filenames" -ForegroundColor Yellow
+    
+    foreach ( $slide in $slides )
+    {                
+        $tmp = $slide.Name
+        $tmp = $tmp -split ' '
+        $noNum = $true
+        $tmp = foreach ( $s in $tmp )
+        {
+            if ( $noNum )
+            {
+                if ( $s -match "\b\d\b" )
+                {
+                    "0$s"
+                    $noNum = $false
+                }
+
+                elseif ( $s -match "\b\d\d\b" )
+                {
+                    "$s"
+                    $noNum = $false
+                }
+
+                else 
+                {
+                    $s
+                }
+            }
+        }
+        $tmp = $tmp -join ' '
+        $tmp = $tmp -replace 'Slide ', ''
+        Rename-Item -Path $slide -NewName $tmp      
+    }
+
+    Write-Host "Finished Converting JPEG filenames`n" -ForegroundColor Green
+}
+
+# Begin Script
+# If no args supplied, exit.
+if ( $args.Count -lt 1 )
+{
+    Write-Host "Must supply Module Folder path. .\export-slides-to-jpeg.ps1 <Module\Folder\Path>" -ForegroundColor Red
+    exit
+}
+
+$moduleFolderPath = $args[0]
+checkArgs( $moduleFolderPath )
