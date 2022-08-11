@@ -1,3 +1,7 @@
+#    TODO:                                              #
+#    - Add support for individual lesson conversion     #
+#    - Add support for multiple module conversion       #
+
 # Check that argument was passed and that it is a directory
 # Exit if not
 function checkArgs ( $module )
@@ -7,7 +11,7 @@ function checkArgs ( $module )
         Write-Host "`nModule Folder not found." -ForegroundColor Red
         exit
     }
-    
+   
     else
     {
         $moduleName = $module | Split-Path -Leaf
