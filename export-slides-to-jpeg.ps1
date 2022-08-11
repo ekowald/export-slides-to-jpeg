@@ -139,7 +139,7 @@ $moduleFolderPath = $args[0]
 checkArgs( $moduleFolderPath )
 
 $lessons = get-childitem "$moduleFolderPath\lessons"
-$lessons = $lessons.Name | Out-String
+$lessons = $lessons.Name
 $moduleFolderPath = $moduleFolderPath | Split-Path -Leaf
 Write-Host "------------------------------`nFinished processing:`n  $moduleFolderPath" -ForegroundColor Green
 
