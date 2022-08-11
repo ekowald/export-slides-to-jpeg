@@ -6,21 +6,18 @@
 
 # Check that argument was passed and that it is a directory
 # Exit if not
-function checkArgs ( $module )
+function testArgs ( $module )
 {
     if ( !( Test-Path -Path $module ) )
     {
-        Write-Host "`nModule Folder not found." -ForegroundColor Red
+        Write-Error -ErrorAction Stop -Exception "Folder '$module' not found."
         exit
     }
    
-    else
-    {
-        $moduleName = $module | Split-Path -Leaf
-        Write-Host "`nConverting '$moduleName' slides to jpeg images.`n" -ForegroundColor Yellow
+    $moduleName = $module | Split-Path -Leaf
+    Write-Host "`nConverting '$moduleName' slides to jpeg images.`n" -ForegroundColor Yellow
 
-        createSlidesDirectory ( $module )
-    }
+    createSlidesDirectory ( $module )   
 }
 
 # Create a new directory for the jpeg images
@@ -139,7 +136,7 @@ if ( $args.Count -lt 1 )
 }
 
 $moduleFolderPath = $args[0]
-checkArgs( $moduleFolderPath )
+testArgs( $moduleFolderPath )
 
 $lessons = get-childitem "$moduleFolderPath\lessons"
 $lessons = $lessons.Name
