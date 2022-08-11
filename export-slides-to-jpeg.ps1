@@ -4,14 +4,15 @@ function checkArgs ( $module )
 {
     if ( !( Test-Path -Path $module ) )
     {
-        Write-Host "Module Folder not found." -ForegroundColor Red
+        Write-Host "`nModule Folder not found." -ForegroundColor Red
         exit
     }
     
     else
     {
         $moduleName = $module | Split-Path -Leaf
-        Write-Host "Converting '$moduleName' slides to jpeg images.`n" -ForegroundColor Yellow
+        Write-Host "`nConverting '$moduleName' slides to jpeg images.`n" -ForegroundColor Yellow
+
         createSlidesDirectory ( $module )
     }
 }
@@ -33,6 +34,7 @@ function createSlidesDirectory ( $module )
                 Write-Host "Creating directory for $lessonName slides." -ForegroundColor Yellow
                 $null = New-Item -Path $lesson.fullname -Name slides -ItemType Directory -Force
                 Write-Host "Directory creation successful.`n" -ForegroundColor Green
+
                 convertSlides ( $lesson )
             }
 
@@ -44,6 +46,7 @@ function createSlidesDirectory ( $module )
                 Write-Host "Creating directory for $lessonName slides." -ForegroundColor Yellow
                 $null = New-Item -Path $lesson.fullname -Name slides -ItemType Directory -Force
                 Write-Host "Directory creation successful.`n" -ForegroundColor Green
+
                 convertSlides ( $lesson )
             }
         }
@@ -65,10 +68,12 @@ function convertSlides ( $lesson )
     }
 
     Write-Host "Finished Converting $lessonName\slides.pptx to jpeg`n" -ForegroundColor Green
+    
     $msppt.Quit()
-
+    Stop-Process -name POWERPNT -Force
 
     $slidesDir = "$lesson\slides"
+
     changeNames ( $slidesDir )
 
 }
@@ -86,8 +91,10 @@ function changeNames ( $slidesDir )
         $noNum = $true
         $tmp = foreach ( $s in $tmp )
         {
+            
             if ( $noNum )
             {
+                
                 if ( $s -match "\b\d\b" )
                 {
                     "0$s"
@@ -118,9 +125,19 @@ function changeNames ( $slidesDir )
 # If no args supplied, exit.
 if ( $args.Count -lt 1 )
 {
-    Write-Host "Must supply Module Folder path. .\export-slides-to-jpeg.ps1 <Module\Folder\Path>" -ForegroundColor Red
+    Write-Host "`nMust supply Module Folder path. .\export-slides-to-jpeg.ps1 <Module\Folder\Path>`n" -ForegroundColor Red
     exit
 }
 
 $moduleFolderPath = $args[0]
 checkArgs( $moduleFolderPath )
+
+$lessons = get-childitem "$moduleFolderPath\lessons"
+$lessons = $lessons.Name | Out-String
+$moduleFolderPath = $moduleFolderPath | Split-Path -Leaf
+Write-Host "------------------------------`nFinished processing:`n  $moduleFolderPath" -ForegroundColor Green
+
+foreach ( $lesson in $lessons )
+{
+    Write-Host "    $lesson" -ForegroundColor Green
+}
