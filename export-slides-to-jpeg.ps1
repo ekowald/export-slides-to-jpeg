@@ -22,6 +22,8 @@ function createSlidesDirectory ( $module )
 {
     $lessons = Get-ChildItem -Path "$module\lessons"
 
+    # Create slides directories only if .pptx exists and is not empty
+    # Overwrites existing slides directory and removes all files from it
     foreach ( $lesson in $lessons )
     {
         $lessonName = $lesson.Name
