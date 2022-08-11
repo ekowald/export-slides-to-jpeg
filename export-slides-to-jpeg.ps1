@@ -90,7 +90,7 @@ function convertSlides ( $lesson )
 function changeNames ( $slidesDir )
 {
     $slides = Get-ChildItem -Path $slidesDir
-    Write-Host "Converting JPEG filenames" -ForegroundColor Yellow
+    Write-Host "Processing JPEG filenames:" -ForegroundColor Yellow
     
     foreach ( $slide in $slides )
     {                
@@ -123,6 +123,7 @@ function changeNames ( $slidesDir )
         }
         $tmp = $tmp -join ' '
         $tmp = $tmp -replace 'Slide ', ''
+        Write-Host "Converting" $slide.Name "to $tmp" -ForegroundColor Yellow
         Rename-Item -Path $slide -NewName $tmp      
     }
 
@@ -143,7 +144,7 @@ checkArgs( $moduleFolderPath )
 $lessons = get-childitem "$moduleFolderPath\lessons"
 $lessons = $lessons.Name
 $moduleFolderPath = $moduleFolderPath | Split-Path -Leaf
-Write-Host "------------------------------`nFinished processing:`n  $moduleFolderPath" -ForegroundColor Green
+Write-Host "----------------------------------------`nFinished processing:`n  $moduleFolderPath" -ForegroundColor Green
 
 foreach ( $lesson in $lessons )
 {
